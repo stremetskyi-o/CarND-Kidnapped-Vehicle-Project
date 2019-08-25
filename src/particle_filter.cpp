@@ -33,6 +33,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
    */
   num_particles = 10;  // TODO: Set the number of particles
   particles = {};
+  weights = {};
   
   std::default_random_engine gen;
   normal_distribution<double> dist_x(x, std[0]);
@@ -139,6 +140,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     vector<int> associations;
     vector<double> sense_x;
     vector<double> sense_y;
+    weights.clear();
     for (auto obs : map_observations) {
       // Find landmark by id
       LandmarkObs lm;
@@ -159,6 +161,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       sense_y.push_back(obs.y);
     }
     p.weight = weight;
+    weights.push_back(weight);
     SetAssociations(p, associations, sense_x, sense_y);
   }
 }
@@ -170,7 +173,15 @@ void ParticleFilter::resample() {
    * NOTE: You may find std::discrete_distribution helpful here.
    *   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
    */
+  std::default_random_engine gen;
+  std::discrete_distribution<> dist(weights.begin(), weights.end());
 
+  vector<Particle> new_particles = {};
+  for (int i = 0; i < num_particles; i++) {
+    new_particles.push_back(particles[dist(gen)]);
+  }
+
+  particles = new_particles;
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, 
