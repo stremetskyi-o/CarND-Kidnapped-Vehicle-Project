@@ -86,18 +86,18 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-  for (LandmarkObs pred : predicted) {
+  for (LandmarkObs obs : observations) {
     double minDistance = std::numeric_limits<double>::max();
     int minDistanceId = -1;
-    for (LandmarkObs obs : observations) {
+    for (LandmarkObs pred : predicted) {
       double distance = dist(pred.x, pred.y, obs.x, obs.y);
       if (distance < minDistance) {
         minDistance = distance;
         minDistanceId = obs.id;
       }
     }
-    pred.id = minDistanceId;
-    std::cout << pred.id << std::endl;
+    obs.id = minDistanceId;
+    std::cout << obs.id << std::endl;
   }
 }
 
@@ -117,7 +117,50 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   and the following is a good resource for the actual equation to implement
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
+  for (auto p : particles) {
+    // Map observations from car cs to particle cs
+    vector<LandmarkObs> map_observations;
+    for (auto obs : observations) {
+      auto x = p.x + cos(p.theta) * obs.x - sin(p.theta) * obs.y;
+      auto y = p.y + sin(p.theta) * obs.x + cos(p.theta) * obs.y;
+      map_observations.push_back(LandmarkObs{obs.id, x, y});
+    }
+    // Filter map landmarks within sensor range
+    vector<LandmarkObs> predicted;
+    for (auto landmark : map_landmarks.landmark_list) {
+      if (dist(p.x, p.y, landmark.x_f, landmark.y_f) <= sensor_range) {
+        predicted.push_back(LandmarkObs{landmark.id_i, landmark.x_f, landmark.y_f});
+      }
+    }
+    
+    dataAssociation(predicted, map_observations);
+    // Calculate weight
+    double weight = 1;
+    vector<int> associations;
+    vector<double> sense_x;
+    vector<double> sense_y;
+    for (auto obs : map_observations) {
+      // Find landmark by id
+      LandmarkObs lm;
+      for (auto pred : predicted) {
+        if (obs.id == pred.id) {
+          lm = pred;
+          break;
+        }
+      }
 
+      // Calculate probability density and update weight
+      double exponent = - (pow(obs.x - lm.x, 2) / 2 / pow(std_landmark[0], 2) + pow(obs.y - lm.y, 2) / 2 / pow(std_landmark[1], 2));
+      double p = 1 / (2 * M_PI * std_landmark[0] * std_landmark[1]) * exp(exponent);
+      weight *= p;
+
+      associations.push_back(obs.id);
+      sense_x.push_back(obs.x);
+      sense_y.push_back(obs.y);
+    }
+    p.weight = weight;
+    SetAssociations(p, associations, sense_x, sense_y);
+  }
 }
 
 void ParticleFilter::resample() {
