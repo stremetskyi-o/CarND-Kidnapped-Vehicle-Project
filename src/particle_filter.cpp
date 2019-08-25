@@ -62,7 +62,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    */
   std::default_random_engine gen;
                                      
-  for (auto p : particles) {
+  for (auto& p : particles) {
     auto theta = p.theta + yaw_rate * delta_t;
     auto x = p.x + velocity / yaw_rate * (sin(theta) - sin(p.theta));
     auto y = p.y + velocity / yaw_rate * (cos(p.theta) - cos(theta));
@@ -87,10 +87,10 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-  for (LandmarkObs obs : observations) {
+  for (LandmarkObs& obs : observations) {
     double minDistance = std::numeric_limits<double>::max();
     int minDistanceId = -1;
-    for (LandmarkObs pred : predicted) {
+    for (LandmarkObs& pred : predicted) {
       double distance = dist(pred.x, pred.y, obs.x, obs.y);
       if (distance < minDistance) {
         minDistance = distance;
@@ -118,17 +118,17 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   and the following is a good resource for the actual equation to implement
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
-  for (auto p : particles) {
+  for (auto& p : particles) {
     // Map observations from car cs to particle cs
     vector<LandmarkObs> map_observations;
-    for (auto obs : observations) {
+    for (auto& obs : observations) {
       auto x = p.x + cos(p.theta) * obs.x - sin(p.theta) * obs.y;
       auto y = p.y + sin(p.theta) * obs.x + cos(p.theta) * obs.y;
       map_observations.push_back(LandmarkObs{obs.id, x, y});
     }
     // Filter map landmarks within sensor range
     vector<LandmarkObs> predicted;
-    for (auto landmark : map_landmarks.landmark_list) {
+    for (auto& landmark : map_landmarks.landmark_list) {
       if (dist(p.x, p.y, landmark.x_f, landmark.y_f) <= sensor_range) {
         predicted.push_back(LandmarkObs{landmark.id_i, landmark.x_f, landmark.y_f});
       }
@@ -141,10 +141,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     vector<double> sense_x;
     vector<double> sense_y;
     weights.clear();
-    for (auto obs : map_observations) {
+    for (auto& obs : map_observations) {
       // Find landmark by id
       LandmarkObs lm;
-      for (auto pred : predicted) {
+      for (auto& pred : predicted) {
         if (obs.id == pred.id) {
           lm = pred;
           break;
