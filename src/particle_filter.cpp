@@ -94,7 +94,7 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
       double distance = dist(pred.x, pred.y, obs.x, obs.y);
       if (distance < minDistance) {
         minDistance = distance;
-        minDistanceId = obs.id;
+        minDistanceId = pred.id;
       }
     }
     obs.id = minDistanceId;
