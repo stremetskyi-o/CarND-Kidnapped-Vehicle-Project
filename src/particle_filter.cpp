@@ -63,9 +63,16 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
   std::default_random_engine gen;
                                      
   for (auto& p : particles) {
-    auto theta = p.theta + yaw_rate * delta_t;
-    auto x = p.x + velocity / yaw_rate * (sin(theta) - sin(p.theta));
-    auto y = p.y + velocity / yaw_rate * (cos(p.theta) - cos(theta));
+    double theta, x, y;
+    if (fabs(yaw_rate) > 1e-5) {
+      theta = p.theta + yaw_rate * delta_t;
+      x = p.x + velocity / yaw_rate * (sin(theta) - sin(p.theta));
+      y = p.y + velocity / yaw_rate * (cos(p.theta) - cos(theta));
+    } else {
+      theta = p.theta;
+      x = p.x + velocity * delta_t * cos(theta);
+      y = p.y + velocity * delta_t * sin(theta);
+    }
     
     normal_distribution<double> dist_x(x, std_pos[0]);
     normal_distribution<double> dist_y(y, std_pos[1]);
@@ -98,7 +105,6 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
       }
     }
     obs.id = minDistanceId;
-    std::cout << obs.id << std::endl;
   }
 }
 
