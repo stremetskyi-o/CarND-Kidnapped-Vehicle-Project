@@ -118,6 +118,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   and the following is a good resource for the actual equation to implement
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
+  weights.clear();
   for (auto& p : particles) {
     // Map observations from car cs to particle cs
     vector<LandmarkObs> map_observations;
@@ -140,7 +141,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     vector<int> associations;
     vector<double> sense_x;
     vector<double> sense_y;
-    weights.clear();
     for (auto& obs : map_observations) {
       // Find landmark by id
       LandmarkObs lm;
